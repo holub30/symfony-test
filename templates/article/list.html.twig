@@ -1,0 +1,12 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    {% for article in articles %}
+    <div class="list">
+        <a class="list-url" href="article/{{ article.id }}"><strong>{{ article.title }}</strong></a>
+    </div>
+    {% endfor %}
+    <div class="list-new">
+        <a class="list-new-btn" href="/new">Add a new article</a>
+    </div>
+{% endblock %}

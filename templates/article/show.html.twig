@@ -1,0 +1,10 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="show">
+    <h2>{{ article.title }}</h2>
+    <img src="{{ asset('uploads/') }}{{ article.titleImage }}" alt="{{ article.titleImage }}" width="400px" height="250px">
+    <p>{{ article.content }}</p>
+</div>
+{% endblock %}
+
