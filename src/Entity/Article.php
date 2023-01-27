@@ -10,46 +10,59 @@ use Doctrine\ORM\Mapping as ORM;
 class Article
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\GeneratedValue('UUID')]
+    #[ORM\Column(type: Types::TEXT)]
+    private string $id;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $link = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $title = null;
+    private string $title;
 
     #[ORM\Column(type: Types::TEXT)]
-    private ?string $content = null;
+    private string $content;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $titleImage = null;
 
-    public function getId(): ?int
+    #[ORM\Column(Types::TEXT, nullable: true)]
+    private ?string $createdBy = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private \DateTimeImmutable $createdAt;
+
+    public function __construct(string $title, string $content)
+    {
+        $this->title = $title;
+        $this->content = $content;
+
+        $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getId(): string
     {
         return $this->id;
     }
 
-    public function getTitle(): ?string
+    public function getTitle(): string
     {
         return $this->title;
     }
 
-    public function setTitle(string $title): self
+    public function setTitle(string $title): void
     {
         $this->title = $title;
-
-        return $this;
     }
 
-    public function getContent(): ?string
+    public function getContent(): string
     {
         return $this->content;
     }
 
-    public function setContent(string $content): self
+    public function setContent(string $content): void
     {
         $this->content = $content;
-
-        return $this;
     }
 
     public function getTitleImage(): ?string
@@ -57,10 +70,13 @@ class Article
         return $this->titleImage;
     }
 
-    public function setTitleImage(string $titleImage): self
+    public function setTitleImage(string $titleImage): void
     {
         $this->titleImage = $titleImage;
+    }
 
-        return $this;
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
     }
 }

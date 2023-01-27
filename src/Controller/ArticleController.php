@@ -6,21 +6,18 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Form\ArticleFormType;
-use App\Form\Type\BlogType;
 use App\Repository\ArticleRepository;
-use App\Service\UploadHelper;
+use App\Service\FileUploader;
 use Doctrine\ORM\EntityManagerInterface;
-use Gedmo\Sluggable\Util\Urlizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class ArticleController extends AbstractController
+final class ArticleController extends AbstractController
 {
-
-    #[Route('/', name:'list_articles')]
+    #[Route('/articles', name:'articles_list', methods: [Request::METHOD_GET])]
     public function list(ArticleRepository $articleRepository): Response
     {
         $articles = $articleRepository->findAll();
@@ -30,13 +27,13 @@ class ArticleController extends AbstractController
         ]);
     }
 
-    #[Route('/new')]
-    public function new(EntityManagerInterface $em, Request $request, UploadHelper $uploadHelper): Response
+    #[Route('/articles', 'article_create', methods: [Request::METHOD_POST])]
+    public function create(EntityManagerInterface $em, Request $request, FileUploader $fileUploader): Response
     {
-
         $form = $this->createForm(ArticleFormType::class);
 
         $form->handleRequest($request);
+
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var Article $article */
             $article = $form->getData();
@@ -44,7 +41,7 @@ class ArticleController extends AbstractController
             /** @var  UploadedFile $uploadedFile */
             $uploadedFile = $form['imageFile']->getData();
 
-            $newFilename = $uploadHelper->uploadArticleImage($uploadedFile);
+            $newFilename = $fileUploader->uploadArticleImage($uploadedFile);
             $article->setTitleImage($newFilename);
 
             $em->persist($article);
@@ -60,15 +57,13 @@ class ArticleController extends AbstractController
         ]);
     }
 
-    #[Route('/article/{id}')]
-    public function show(ArticleRepository $articleRepository, int $id): Response
+    #[Route('/articles/{id}', methods: [Request::METHOD_GET])]
+    public function show(ArticleRepository $articleRepository, string $id): Response
     {
         $article = $articleRepository->find($id);
 
-        if (!$article) {
-            throw $this->createNotFoundException(
-                'No article found'
-            );
+        if (null === $article) {
+            throw $this->createNotFoundException('No article found');
         }
 
         return $this->render('article/show.html.twig', [
