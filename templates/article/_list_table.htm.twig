@@ -1,0 +1,9 @@
+<td>
+    <a class="font-weight-bold" href="{{ path('article_show', { id: article.id }) }}">{{ article.title }}</a>
+</td>
+<td>
+    {{ article.createdAt.format('d-M-Y H:i') }}
+</td>
+<td>
+    {{ article.createdBy }}
+</td>

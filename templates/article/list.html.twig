@@ -1,12 +1,43 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-    {% for article in articles %}
-    <div class="list">
-        <a class="list-url" href="article/{{ article.id }}"><strong>{{ article.title }}</strong></a>
-    </div>
-    {% endfor %}
-    <div class="list-new">
-        <a class="list-new-btn" href="/new">Add a new article</a>
+    <div class="container my-4">
+        <h4 class="font-weight-bold mx-2">All articles</h4>
+
+        <table class="table table-hover">
+            <thead class="thead-light">
+            <tr>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Author</th>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <th>Status</th>
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+                {% for article in pager %}
+                    <tr>
+                        {% if false == article.isPublished and is_granted('ROLE_ADMIN') %}
+                            {{ include('article/_list_table.htm.twig') }}
+
+                        {% elseif article.isPublished %}
+                            {{ include('article/_list_table.htm.twig') }}
+                        {% endif %}
+
+                        {% if is_granted('ROLE_ADMIN') %}
+                            <td>
+                                {{ article.isPublished ? 'published' : 'saved to draft' }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                {{ pagerfanta(pager) }}
+            </tbody>
+        </table>
+
+        {% if is_granted('ROLE_ADMIN') %}
+            <a class="btn btn-md btn-primary" href="{{ path('article_create') }}">Add a new article</a>
+        {% endif %}
     </div>
 {% endblock %}

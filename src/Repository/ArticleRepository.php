@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Article;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -37,6 +38,18 @@ class ArticleRepository extends ServiceEntityRepository
         if ($flush) {
             $this->getEntityManager()->flush();
         }
+    }
+
+    private function addOrderByCreatedAtQueryBuilder(QueryBuilder $queryBuilder = null): QueryBuilder
+    {
+        $queryBuilder = $queryBuilder ?? $this->createQueryBuilder('article');
+
+        return $queryBuilder->orderBy('article.createdAt', 'DESC');
+    }
+
+    public function createOrderByCreatedAtQueryBuilder(): QueryBuilder
+    {
+        return $this->addOrderByCreatedAtQueryBuilder();
     }
 
 //    /**
