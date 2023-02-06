@@ -46,7 +46,7 @@ class ArticleVoter extends Voter
 
         switch ($attribute) {
             case self::EDIT:
-                return $user->getUserIdentifier() === $subject->getCreatedBy();
+                return $user === $subject->getCreatedBy();
         }
 
         return false;

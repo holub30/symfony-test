@@ -2,64 +2,81 @@
 
 {% block body %}
     <div class="container">
-        <div class="navbar navbar-expand-sm">
-            <ul class="nav row">
-                <li class="nav-item">
-                    <a class="btn btn-sm btn-primary" href="{{ path('articles_list') }}">List articles</a>
-                </li>
-
-                {% if is_granted('EDIT', article)%}
-                    <li class="nav-item mx-2">
-                        <a class="btn btn-sm btn-primary" href="{{ path('article_edit', { 'id': article.id }) }}">Edit</a>
-                    </li>
-                {% endif %}
-
-                {% if false == article.isPublished and is_granted('EDIT', article)%}
-                    <li class="nav-item">
-                        <a class="btn btn-sm btn-primary" href="{{ path('article_post', {'id': article.id}) }}">Post article</a>
-                    </li>
-                {% endif %}
-
-            </ul>
-        </div>
-
-        <h2>{{ article.title }}</h2>
-
-        {% if article.updatedBy and article.updatedAt %}
-            <div class="small">
-                Updated: {{ article.updatedAt.format('d-M-Y H:i') }} by {{ article.updatedBy }}
-            </div>
-        {% endif %}
-
-        <img src="{{ asset('uploads/') }}{{ article.titleImage }}" alt="{{ article.titleImage }}" width="400px" height="250px">
-        <div class="font-weight-bold">By {{ article.createdBy }}</div>
-        <p class="my-4">{{ article.content }}</p>
-
-        {% if is_granted('IS_ANONYMOUS') %}
-            <div>
-                <a class="btn btn-md btn-primary" href="{{ path('app_login') }}"><strong>Login to view full article</strong></a>
-            </div>
-        {% endif %}
-
-        {% if is_granted('ROLE_USER') and article.isPublished %}
-            <div>
-                <a class="btn btn-md btn-primary" href="{{ path('comment_post', { 'id': article.id }) }}"><strong>Comment</strong></a>
-            </div>
-        {% endif %}
-
-        <ul class="list-group my-4">
-            {% for comment in pager %}
-                <li class="list-group-item">
-                    <div><strong>{{ comment.owner.getUserIdentifier }}</strong><small>, posted at {{ comment.postedAt.format('H:i d-M') }}</small></div>
-                    <div>{{ comment.content }}</div>
-
-                    {% if is_granted('ROLE_ADMIN') %}
-                        <a class="btn btn-sm btn-primary float-right" href="{{ path('comment_delete', { 'id': comment.id } ) }}">Delete</a>
-                    {% endif %}
-                </li>
-            {% endfor %}
-            {{ pagerfanta(pager) }}
+        <ul class="nav nav-tabs my-2">
+            <li class="nav-item my-2">
+                <a class="btn btn-sm btn-primary nav-link" href="{{ path('articles_list') }}">Back to list</a>
+            </li>
+            <li class="nav-item mx-2 my-2">
+                <a class="btn btn-sm btn-primary nav-link active" data-toggle="tab" href="#show">Article</a>
+            </li>
+            {% if is_granted('EDIT', article)%}
+            <li class="nav-item my-2">
+                <a class="btn btn-sm btn-primary nav-link" data-toggle="tab" href="#edit">Edit</a>
+            </li>
+            {% endif %}
+            {% if false == article.isPublished and is_granted('EDIT', article)%}
+            <li class="nav-item my-2 mx-2">
+                <a class="btn btn-sm btn-primary nav-link" href="{{ path('article_post', {'id': article.id}) }}">Post article</a>
+            </li>
+            {% endif %}
         </ul>
+        <div class="tab-content my-4">
+            <div class="tab-pane container active container" id="show">
+            <h2 class="font-weight-bold">{{ article.title }}</h2>
+
+            {% if article.updatedBy and article.updatedAt %}
+                <div class="small">
+                    Updated: {{ article.updatedAt.format('d-M-Y H:i') }} by {{ article.updatedBy }}
+                </div>
+            {% endif %}
+
+            <img src="{{ asset('uploads/') }}{{ article.titleImage }}" alt="{{ article.titleImage }}" width="400px" height="250px">
+            <div class="font-weight-bold">
+                By {{ article.createdBy.getEmail }}
+            </div>
+            <p class="my-4">
+                {% if is_granted('IS_ANONYMOUS') %}
+                    {{ article.content|slice(0, 50)}}
+                {% else %}
+                    {{ article.content }}
+                {% endif %}
+            </p>
+
+            {% if is_granted('IS_ANONYMOUS') %}
+                <div>
+                    <a class="btn btn-md btn-primary" href="{{ path('app_login') }}"><strong>Login to view full article</strong></a>
+                </div>
+            {% endif %}
+
+            {% if is_granted('ROLE_USER') and article.isPublished %}
+                <div>
+                    <a class="btn btn-md btn-primary" href="{{ path('comment_post', { 'id': article.id }) }}"><strong>Comment</strong></a>
+                </div>
+            {% endif %}
+
+                {# COMMENTS #}
+                <ul class="list-group my-4">
+                    {% for comment in pager %}
+                        <li class="list-group-item">
+                            <div><strong>{{ comment.owner.getUserIdentifier }}</strong><small>, posted at {{ comment.postedAt.format('H:i d-M') }}</small></div>
+                            <div>{{ comment.content }}</div>
+
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <a class="btn btn-sm btn-primary float-right" href="{{ path('comment_delete', { 'id': comment.id } ) }}">Delete</a>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                    {{ pagerfanta(pager) }}
+                </ul>
+            </div>
+
+            {# Edit form #}
+            {% if is_granted('EDIT', article)%}
+                <div class="tab-pane container" id="edit">
+                    {{ form|raw }}
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endblock %}
 

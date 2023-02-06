@@ -19,13 +19,6 @@ class RegisterFormType extends AbstractType
         $builder
             ->add('email', EmailType::class)
             ->add('password', PasswordType::class)
-            ->add('roles', ChoiceType::class, [
-                'mapped' => false,
-                'choices' => [
-                    'Admin' => 'ROLE_ADMIN',
-                    'User' => 'ROLE_USER',
-                ],
-            ])
             ->add('signUp', SubmitType::class)
         ;
     }

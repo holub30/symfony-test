@@ -20,8 +20,7 @@ final class Version20230129154716 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE article ALTER COLUMN id TYPE TEXT, ALTER COLUMN id SET DEFAULT uuid_generate_v4()');
-        $this->addSql('UPDATE article SET id = uuid_generate_v4() WHERE id ~ \'^[0-9]*$\'');
+        $this->addSql('ALTER TABLE article ALTER COLUMN id TYPE TEXT');
         $this->addSql('ALTER TABLE article ALTER COLUMN title_image DROP NOT NULL');
         $this->addSql('ALTER TABLE article ADD link TEXT DEFAULT NULL');
         $this->addSql('ALTER TABLE article ADD created_by TEXT DEFAULT NULL');

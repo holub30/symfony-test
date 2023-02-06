@@ -8,8 +8,8 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\CustomIdGenerator;
-use phpDocumentor\Reflection\Types\Boolean;
-use Symfony\Component\Validator\Constraints\Date;
+use Symfony\Bundle\SecurityBundle\Security;
+
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -32,14 +32,15 @@ class Article
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $titleImage = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $createdBy = null;
-
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\ManyToOne(inversedBy: 'articles')]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $createdBy;
+
     #[ORM\Column]
-    private bool $isPublished = false;
+    private bool $isPublished;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $updatedBy = null;
@@ -52,7 +53,7 @@ class Article
 
     public function __construct()
     {
-
+        $this->isPublished = false;
         $this->createdAt = new \DateTimeImmutable();
         $this->comments = new ArrayCollection();
     }
@@ -102,14 +103,14 @@ class Article
         return $this->createdAt;
     }
 
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?string $createdBy): void
+    public function setCreatedBy(User $createdBy): void
     {
         $this->createdBy = $createdBy;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
     }
 
     public function getLink(): ?string

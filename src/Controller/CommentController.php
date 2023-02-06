@@ -20,7 +20,7 @@ class CommentController extends AbstractController
 {
     #[Route('/comment/articles/{id}', name:'comment_post')]
     #[IsGranted('ROLE_USER')]
-    public function post(Request $request, EntityManagerInterface $em, Article $article): Response
+    public function post(CommentRepository $commentRepository, Article $article, Request $request): Response
     {
         if (!$article->getIsPublished()) {
             throw $this->createNotFoundException('Article is not published');
@@ -34,14 +34,9 @@ class CommentController extends AbstractController
             /** @var Comment $comment */
             $comment = $form->getData();
 
-            /** @var User $user */
-            $user = $this->getUser();
-
-            $comment->setOwner($user);
             $comment->setRelatedArticle($article);
 
-            $em->persist($comment);
-            $em->flush();
+            $commentRepository->save($comment, true);
 
             $this->addFlash('success', 'Comment posted');
 
@@ -55,12 +50,11 @@ class CommentController extends AbstractController
 
     #[Route('/comment/delete/{id}', name: 'comment_delete')]
     #[IsGranted('ROLE_ADMIN')]
-    public function delete(Request $request, EntityManagerInterface $em, CommentRepository $commentRepository, int $id): Response
+    public function delete(Request $request, CommentRepository $commentRepository, int $id): Response
     {
         $comment = $commentRepository->find($id);
 
-        $em->remove($comment);
-        $em->flush();
+        $commentRepository->remove($comment, true);
 
         $route = $request->headers->get('referer');
 
