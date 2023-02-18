@@ -42,12 +42,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'createdBy', targetEntity: Article::class)]
     private Collection $articles;
 
+    #[ORM\OneToMany(mappedBy: 'updatedBy', targetEntity: Article::class)]
+    private Collection $updatedArticles;
+
     public function __construct()
     {
         $this->roles = ['ROLE_USER'];
         $this->registerDate = new \DateTimeImmutable();
         $this->comments = new ArrayCollection();
         $this->articles = new ArrayCollection();
+        $this->updatedArticles = new ArrayCollection();
     }
 
     public function getId(): string
@@ -185,6 +189,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($article->getCreatedBy() === $this) {
                 $article->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Article>
+     */
+    public function getUpdatedArticles(): Collection
+    {
+        return $this->updatedArticles;
+    }
+
+    public function addUpdatedArticle(Article $article): self
+    {
+        if (!$this->updatedArticles->contains($article)) {
+            $this->updatedArticles->add($article);
+            $article->setUpdatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUpdatedArticle(Article $article): self
+    {
+        if ($this->updatedArticles->removeElement($article)) {
+            // set the owning side to null (unless already changed)
+            if ($article->getUpdatedBy() === $this) {
+                $article->setUpdatedAt(null);
             }
         }
 

@@ -8,8 +8,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\CustomIdGenerator;
-use Symfony\Bundle\SecurityBundle\Security;
-
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -42,8 +40,9 @@ class Article
     #[ORM\Column]
     private bool $isPublished;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $updatedBy = null;
+    #[ORM\ManyToOne(inversedBy: 'updatedArticles')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $updatedBy = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
@@ -135,12 +134,12 @@ class Article
         return $this;
     }
 
-    public function getUpdatedBy(): ?string
+    public function getUpdatedBy(): ?User
     {
         return $this->updatedBy;
     }
 
-    public function setUpdatedBy(?string $updatedBy): self
+    public function setUpdatedBy(?User $updatedBy): self
     {
         $this->updatedBy = $updatedBy;
 

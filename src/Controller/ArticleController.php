@@ -140,7 +140,7 @@ final class ArticleController extends AbstractController
             }
 
             $article->setUpdatedAt(new \DateTimeImmutable());
-            $article->setUpdatedBy($this->getUser()->getUserIdentifier());
+            $article->setUpdatedBy($this->getUser());
 
             $articleRepository->save($article, true);
 
