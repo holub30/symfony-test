@@ -7,33 +7,76 @@ namespace App\Controller;
 use App\Entity\Article;
 use App\Form\ArticleFormType;
 use App\Repository\ArticleRepository;
+use App\Repository\CommentRepository;
 use App\Service\FileUploader;
-use Doctrine\ORM\EntityManagerInterface;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ArticleController extends AbstractController
 {
     #[Route('/articles', name:'articles_list', methods: [Request::METHOD_GET])]
-    public function list(ArticleRepository $articleRepository): Response
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function list(ArticleRepository $articleRepository, Request $request, FileUploader $fileUploader): Response
     {
-        $articles = $articleRepository->findAll();
+        $queryBuilder = $articleRepository->createOrderByCreatedAtQueryBuilder();
+        $adapter = new QueryAdapter($queryBuilder);
+        $pagerfanta = Pagerfanta::createForCurrentPageWithMaxPerPage(
+            $adapter,
+            (int)$request->query->get('page', 1),
+            5
+        );
+
+        $form = $this->create($articleRepository, $request, $fileUploader)->getContent();
 
         return $this->render('article/list.html.twig', [
-            'articles' => $articles
+            'pager' => $pagerfanta,
+            'form' => $form
         ]);
     }
 
-    #[Route('/articles', 'article_create', methods: [Request::METHOD_POST])]
-    public function create(EntityManagerInterface $em, Request $request, FileUploader $fileUploader): Response
+    #[Route('/articles/{id}', name: 'article_show', methods: [Request::METHOD_GET])]
+    #[IsGranted('PUBLIC_ACCESS')]
+    public function show(FileUploader $fileUploader, ArticleRepository $articleRepository, CommentRepository $commentRepository, Request $request, string $id): Response
     {
-        $form = $this->createForm(ArticleFormType::class);
+        $article = $articleRepository->find($id);
+
+        if (null === $article) {
+            throw $this->createNotFoundException('Article not found');
+        }
+
+        $queryBuilder = $commentRepository->createOrderByPostedAtQueryBuilder($article);
+        $adapter = new QueryAdapter($queryBuilder);
+        $pagerfanta = Pagerfanta::createForCurrentPageWithMaxPerPage(
+            $adapter,
+            (int)$request->query->get('page', 1),
+            2
+        );
+
+        $form = $this->edit($article, $articleRepository, $request, $fileUploader)->getContent();
+
+        return $this->render('article/show.html.twig', [
+            'article' => $article,
+            'form' => $form,
+            'pager' => $pagerfanta,
+        ]);
+    }
+
+    #[Route('/articles', name: 'article_create', methods: [Request::METHOD_POST])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function create(ArticleRepository $articleRepository, Request $request, FileUploader $fileUploader): Response
+    {
+        $form = $this->createForm(ArticleFormType::class, null, [
+            'action' => $this->generateUrl('article_create'),
+            'method' => 'POST',
+        ]);
 
         $form->handleRequest($request);
-
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var Article $article */
             $article = $form->getData();
@@ -44,30 +87,68 @@ final class ArticleController extends AbstractController
             $newFilename = $fileUploader->uploadArticleImage($uploadedFile);
             $article->setTitleImage($newFilename);
 
-            $em->persist($article);
-            $em->flush();
+            if ($form->get('submitBtn')->isClicked()) {
+                $article->setIsPublished(true);
+            }
+
+            $articleRepository->save($article, true);
 
             $this->addFlash('success', 'Article created');
 
-            return $this->redirectToRoute('list_articles');
+            return $this->redirectToRoute('articles_list');
         }
 
-        return $this->render('article/new.html.twig', [
-            'form' => $form,
-        ]);
+        return $this->render('article/create.html.twig', ['form' => $form]);
     }
 
-    #[Route('/articles/{id}', methods: [Request::METHOD_GET])]
-    public function show(ArticleRepository $articleRepository, string $id): Response
+    #[Route('/articles/{id}/post', name: 'article_post', methods: [Request::METHOD_GET])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function post(ArticleRepository $articleRepository, Article $article): Response
     {
-        $article = $articleRepository->find($id);
-
-        if (null === $article) {
-            throw $this->createNotFoundException('No article found');
+        if ($article->getIsPublished()) {
+            throw $this->createNotFoundException('Article already published');
         }
 
-        return $this->render('article/show.html.twig', [
-            'article' => $article
+        $article->setIsPublished(true);
+        $article->setCreatedAt(new \DateTimeImmutable());
+
+        $articleRepository->save($article, true);
+
+        $this->addFlash('success', 'Article successfully posted!');
+
+        return $this->redirectToRoute('article_show', ['id' => $article->getId()]);
+    }
+
+
+    #[Route('/articles/{id}', name:'article_edit', methods: [Request::METHOD_PATCH])]
+    #[IsGranted('EDIT', 'article')]
+    public function edit(Article $article, ArticleRepository $articleRepository, Request $request, FileUploader $fileUploader): Response
+    {
+        $form = $this->createForm(ArticleFormType::class, $article, [
+            'action' => $this->generateUrl('article_edit', ['id' => $article->getId()]),
+            'method' => 'PATCH',
         ]);
+
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var  UploadedFile $uploadedFile */
+            $uploadedFile = $form['imageFile']->getData();
+
+            if (null !== $uploadedFile) {
+                $newFilename = $fileUploader->uploadArticleImage($uploadedFile);
+                $article->setTitleImage($newFilename);
+            }
+
+            $article->setUpdatedAt(new \DateTimeImmutable());
+            $article->setUpdatedBy($this->getUser());
+
+            $articleRepository->save($article, true);
+
+            $this->addFlash('success', 'Article updated!');
+
+            return $this->redirectToRoute('article_show', ['id' => $article->getId()]);
+        }
+
+        return $this->render('article/edit.html.twig', ['form' => $form]);
     }
 }

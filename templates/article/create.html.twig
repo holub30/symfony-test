@@ -1,0 +1,14 @@
+{% block body %}
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+
+        {{ form_row(form.title, {label: 'Article title'}) }}
+        {{ form_row(form.content) }}
+        {{ form_row(form.imageFile) }}
+
+        <div class="row col-lg-3">
+            {{ form_widget(form.submitBtn, {label: 'Post'}) }}
+            <button type="submit" class="btn btn-primary mx-2">Save to draft</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

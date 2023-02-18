@@ -41,7 +41,7 @@ class ArticleFormType extends AbstractType
                 'required' => false,
                 'constraints' => $imageConstraints,
             ])
-            ->add('save', SubmitType::class)
+            ->add('submitBtn', SubmitType::class)
         ;
     }
 

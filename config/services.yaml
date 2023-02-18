@@ -21,6 +21,15 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\EventListener\ArticleCreatedByAssignmentListener:
+        autowire: true
+        tags:
+            - { name: doctrine.event_listener, entity: 'App\Entity\Article', event: prePersist }
+
+    App\EventListener\CommentOwnerAssignmentListener:
+        autowire: true
+        tags:
+            - { name: doctrine.event_listener, entity: 'App\Entity\Comment', event: prePersist }
