@@ -15,14 +15,14 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:create-admin',
-    description: 'Creates an admin user.',
+    description: 'Creates new user or makes an existent user admin',
     aliases: ['app:add-admin'],
     hidden: false
 )]
 class CreateAdminCommand extends Command
 {
 
-    public function __construct(private UserRepository $objectManager, private UserPasswordHasherInterface $passwordHasher)
+    public function __construct(private UserRepository $userRepository, private UserPasswordHasherInterface $passwordHasher)
     {
         parent::__construct();
     }
@@ -31,20 +31,31 @@ class CreateAdminCommand extends Command
     {
         $this
             ->addArgument('email', InputArgument::REQUIRED, 'email')
-            ->addArgument('password', InputArgument::REQUIRED, 'password')
+            ->addArgument('password', InputArgument::OPTIONAL, 'password', 'Required for new user')
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $admin = new User();
-        $admin->setEmail($input->getArgument('email'));
-        $admin->setPassword($this->passwordHasher->hashPassword($admin, $input->getArgument('password')));
-        $admin->setRoles(['ROLE_ADMIN']);
+        $email = $input->getArgument('email');
+        $user = $this->userRepository->findByEmail($email);
+        $isUserNew = false;
 
-        $this->objectManager->save($admin, true);
+        if (null === $user) {
+            $user = new User();
+            $user->setEmail($email);
+            $user->setPassword($this->passwordHasher->hashPassword($user, $input->getArgument('password')));
+            $isUserNew = true;
+        }
 
-        $output->writeln('Admin user successfully created!');
+        $user->setRoles(['ROLE_ADMIN']);
+
+        $this->userRepository->save($user, true);
+
+        $isUserNew
+            ? $output->writeln(\sprintf('User %s with role admin successfully created!', $user->getId()))
+            : $output->writeln(\sprintf('User %s granted role admin!', $user->getId()))
+        ;
 
         return Command::SUCCESS;
     }
